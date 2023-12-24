@@ -1,0 +1,83 @@
+name: Build app React
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
+
+  test:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Test app
+        run: npm run test
+
+  deploy:
+    needs: test
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    environment:
+      name: production
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: install dependencies
+        run: npm install
+
+      - name: execute build
+        run: npm run build
+        # env:
+        #   PUBLIC_URL: <nome_repo>
+
+      - name: upload artifacts
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: "./build"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v3
+
+      # - name: Serve app
+      #   run: npm run serve
